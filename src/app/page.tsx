@@ -1,13 +1,13 @@
-import { kpis, viajes, incidencias } from "@/data/mock";
+import { kpis, Traslado, incidencias } from "@/data/mock";
 import { Card, Badge } from "@/components/ui";
 import { money } from "@/lib/utils";
 import Link from "next/link";
 import { ArrowUpRight, Clock, MapPinned, AlertTriangle, CheckCircle2, Truck, Wallet, FileWarning, Users, Activity } from "lucide-react";
 
 const kpiCards = [
-  { label:"Viajes activos", value:kpis.activos, sub:"+2 vs ayer", icon:Truck, color:"bg-[#ff4d11]" },
+  { label:"Traslado activos", value:kpis.activos, sub:"+2 vs ayer", icon:Truck, color:"bg-[#ff4d11]" },
   { label:"Pendientes de asignación", value:kpis.pendientes, sub:"Requieren atención", icon:Clock, color:"bg-amber-500" },
-  { label:"Conductores disponibles", value:kpis.conductoresDisponibles, sub:`${kpis.conductoresEnViaje} en viaje`, icon:Users, color:"bg-emerald-500" },
+  { label:"Conductores disponibles", value:kpis.conductoresDisponibles, sub:`${kpis.conductoresEnTraslado} en Traslado`, icon:Users, color:"bg-emerald-500" },
   { label:"Ingresos del día", value: money(kpis.ingresosHoy), sub:"Estimado", icon:Wallet, color:"bg-slate-900" },
   { label:"Incidencias abiertas", value:kpis.incidenciasAbiertas, sub:"1 nueva hoy", icon:AlertTriangle, color:"bg-red-500" },
   { label:"Docs pendientes", value:kpis.docsPendientes, sub:"Revisión requerida", icon:FileWarning, color:"bg-violet-500" },
@@ -21,7 +21,7 @@ export default function Dashboard(){
           <h1 className="text-2xl font-bold tracking-tight">¿Qué está pasando en la operación?</h1>
           <p className="text-sm text-slate-500 mt-1">Vista ejecutiva del {new Date().toLocaleDateString("es-MX",{weekday:"long", day:"numeric", month:"long"}) } • Actualizado hace 2 min</p>
         </div>
-        <Link href="/viajes" className="inline-flex items-center gap-2 bg-slate-900 text-white rounded-xl px-4 h-9 text-sm font-medium">Ver todos los viajes <ArrowUpRight className="w-4 h-4"/></Link>
+        <Link href="/Traslado" className="inline-flex items-center gap-2 bg-slate-900 text-white rounded-xl px-4 h-9 text-sm font-medium">Ver todos los Traslado <ArrowUpRight className="w-4 h-4"/></Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -84,7 +84,7 @@ export default function Dashboard(){
           </div>
           <div className="px-3 space-y-2 flex-1">
             {[
-              {t:"Viaje sin conductor", d:"RR-24082 • Ana Torres • hace 42 min", c:"warning"},
+              {t:"Traslado sin conductor", d:"RR-24082 • Ana Torres • hace 42 min", c:"warning"},
               {t:"Evidencia incompleta", d:"RR-24085 • MasterFix • fotos ilegibles", c:"danger"},
               {t:"Documento vencido", d:"Gabriela Ortiz • Licencia vencida 03 Sep", c:"danger"},
               {t:"Conductor retrasado", d:"RR-24081 • +25 min tráfico Qro", c:"warning"},
@@ -112,8 +112,8 @@ export default function Dashboard(){
           <div className="px-5 pb-5 space-y-3">
             {[
               {t:"Evidencia final cargada", d:"RR-24084 • Fernando Cruz • hace 18 min", ok:true},
-              {t:"Conductor aceptó viaje", d:"RR-24083 • Jorge Herrera • hace 32 min", ok:true},
-              {t:"Nuevo viaje solicitado", d:"RR-24086 • Roberto Salas • hace 51 min", ok:false},
+              {t:"Conductor aceptó Traslado", d:"RR-24083 • Jorge Herrera • hace 32 min", ok:true},
+              {t:"Nuevo Traslado solicitado", d:"RR-24086 • Roberto Salas • hace 51 min", ok:false},
               {t:"Pago liberado", d:"RR-24084 • $7,400 — GNP • hace 1 h", ok:true},
               {t:"Incidencia creada", d:"INC-881 • RR-24085 • hace 2 h", ok:false},
             ].map(r=>(
@@ -126,10 +126,10 @@ export default function Dashboard(){
         </Card>
 
         <Card>
-          <div className="p-5 pb-3 flex items-center justify-between"><h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4"/> Próximos viajes</h3><Link href="/viajes" className="text-xs font-medium text-[#ff4d11]">Ver todos</Link></div>
+          <div className="p-5 pb-3 flex items-center justify-between"><h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4"/> Próximos Traslado</h3><Link href="/Traslado" className="text-xs font-medium text-[#ff4d11]">Ver todos</Link></div>
           <div className="px-3 pb-3 space-y-2">
-            {viajes.slice(0,4).map(v=>(
-              <Link key={v.id} href={`/viajes/${v.id}`} className="flex gap-3 p-3 rounded-xl border hover:bg-slate-50">
+            {Traslado.slice(0,4).map(v=>(
+              <Link key={v.id} href={`/Traslado/${v.id}`} className="flex gap-3 p-3 rounded-xl border hover:bg-slate-50">
                 <div className="w-10 h-10 rounded-xl bg-slate-900 text-white grid place-items-center font-bold text-xs">{v.id.slice(-3)}</div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">{v.cliente} • {v.hora}</div>
@@ -147,7 +147,7 @@ export default function Dashboard(){
             <div className="rounded-xl bg-slate-900 text-white p-4">
               <div className="text-xs opacity-70">Ingresos estimados hoy</div>
               <div className="text-2xl font-bold mt-1">{money(kpis.ingresosHoy)}</div>
-              <div className="text-xs opacity-60 mt-1">5 viajes finalizados + 8 activos</div>
+              <div className="text-xs opacity-60 mt-1">5 Traslado finalizados + 8 activos</div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-xl border p-3"><div className="text-slate-500 text-xs">Por cobrar</div><div className="font-bold">{money(14250)}</div></div>

@@ -18,8 +18,8 @@ create table if not exists public.tad_config (
 insert into public.tad_config (id) values (1)
 on conflict (id) do nothing;
 
--- 2) Viajes — centro operativo (para conectar tabla Viajes del panel)
-create table if not exists public.viajes (
+-- 2) Traslado — centro operativo (para conectar tabla Traslado del panel)
+create table if not exists public.Traslado (
   id text primary key, -- RR-XXXXX
   cliente text not null,
   empresa text,
@@ -45,7 +45,7 @@ create table if not exists public.conductores (
   estatus text not null,
   disponibilidad text not null,
   certificacion text not null,
-  viajes_realizados int default 0,
+  Traslado_realizados int default 0,
   calificacion numeric default 0,
   ganancias numeric default 0,
   created_at timestamptz default now()
@@ -59,14 +59,14 @@ create table if not exists public.empresas (
   rfc text,
   contacto_principal text,
   tipo text not null,
-  viajes int default 0,
+  Traslado int default 0,
   created_at timestamptz default now()
 );
 
 -- 5) Incidencias
 create table if not exists public.incidencias (
   id text primary key,
-  viaje_id text references public.viajes(id),
+  Traslado_id text references public.Traslado(id),
   tipo text not null,
   descripcion text not null,
   estatus text not null,
@@ -76,7 +76,7 @@ create table if not exists public.incidencias (
 
 -- RLS — por ahora abierto para panel admin (ajustar a auth real después)
 alter table public.tad_config enable row level security;
-alter table public.viajes enable row level security;
+alter table public.Traslado enable row level security;
 alter table public.conductores enable row level security;
 alter table public.empresas enable row level security;
 alter table public.incidencias enable row level security;
@@ -85,8 +85,8 @@ do $$ begin
   if not exists (select 1 from pg_policies where policyname='tad_config_all') then
     create policy tad_config_all on public.tad_config for all using (true) with check (true);
   end if;
-  if not exists (select 1 from pg_policies where policyname='viajes_all') then
-    create policy viajes_all on public.viajes for all using (true) with check (true);
+  if not exists (select 1 from pg_policies where policyname='Traslado_all') then
+    create policy Traslado_all on public.Traslado for all using (true) with check (true);
   end if;
   if not exists (select 1 from pg_policies where policyname='conductores_all') then
     create policy conductores_all on public.conductores for all using (true) with check (true);
@@ -146,7 +146,7 @@ do $$ begin
 end $$;
 
 -- Índices útiles
-create index if not exists idx_viajes_estatus on public.viajes(estatus);
-create index if not exists idx_viajes_fecha on public.viajes(fecha);
+create index if not exists idx_Traslado_estatus on public.Traslado(estatus);
+create index if not exists idx_Traslado_fecha on public.Traslado(fecha);
 create index if not exists idx_profiles_role on public.profiles(role);
 create index if not exists idx_profiles_email on public.profiles(email);

@@ -7,14 +7,14 @@ export default function ReportesPage(){
       <div><h1 className="text-2xl font-bold">Reportes</h1><p className="text-sm text-slate-500">Desempeño operativo, financiero y de conductores</p></div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="p-5"><div className="text-xs text-slate-500">Viajes esta semana</div><div className="text-2xl font-bold">48</div><div className="text-xs text-emerald-600">+12% vs semana anterior</div></Card>
+        <Card className="p-5"><div className="text-xs text-slate-500">Traslado esta semana</div><div className="text-2xl font-bold">48</div><div className="text-xs text-emerald-600">+12% vs semana anterior</div></Card>
         <Card className="p-5"><div className="text-xs text-slate-500">Cancelaciones</div><div className="text-2xl font-bold">3 <span className="text-sm font-normal text-slate-500">(6.2%)</span></div></Card>
         <Card className="p-5"><div className="text-xs text-slate-500">Tiempo promedio asignación</div><div className="text-2xl font-bold">18 min</div></Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="p-5">
-          <h3 className="font-semibold">Viajes por día (últimos 7 días)</h3>
+          <h3 className="font-semibold">Traslado por día (últimos 7 días)</h3>
           <div className="mt-4 flex items-end gap-2 h-[160px]">
             {[5,8,6,12,9,7,11].map((v,i)=>(
               <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -38,7 +38,7 @@ export default function ReportesPage(){
         <h3 className="font-semibold">Top conductores del mes</h3>
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-sm">
-            <thead className="text-xs text-slate-500 border-b"><tr><th className="text-left py-2">Conductor</th><th className="text-center py-2">Viajes</th><th className="text-center py-2">Calif.</th><th className="text-right py-2">Ganancias</th></tr></thead>
+            <thead className="text-xs text-slate-500 border-b"><tr><th className="text-left py-2">Conductor</th><th className="text-center py-2">Traslado</th><th className="text-center py-2">Calif.</th><th className="text-right py-2">Ganancias</th></tr></thead>
             <tbody className="divide-y">
               <tr><td className="py-2 font-medium">Fernando Cruz</td><td className="py-2 text-center">18</td><td className="py-2 text-center">4.95</td><td className="py-2 text-right font-bold">{money(71200)}</td></tr>
               <tr><td className="py-2 font-medium">Luis Ramírez</td><td className="py-2 text-center">14</td><td className="py-2 text-center">4.90</td><td className="py-2 text-right font-bold">{money(48200)}</td></tr>

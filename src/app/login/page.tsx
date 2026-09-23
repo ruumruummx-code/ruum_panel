@@ -90,11 +90,11 @@ export default function LoginPage(){
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/> Plataforma operativa en vivo
             </div>
             <h1 className="text-4xl font-black leading-tight mt-4">La consola que mueve cada traslado.</h1>
-            <p className="text-white/60 mt-3 leading-relaxed">Valida usuarios y conductores, asigna viajes, revisa evidencia, atiende incidencias y controla pagos — todo desde un solo lugar.</p>
+            <p className="text-white/60 mt-3 leading-relaxed">Valida usuarios y conductores, asigna Traslado, revisa evidencia, atiende incidencias y controla pagos — todo desde un solo lugar.</p>
             <div className="grid grid-cols-3 gap-3 mt-8">
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">8</div>
-                <div className="text-xs opacity-60">Viajes activos</div>
+                <div className="text-xs opacity-60">Traslado activos</div>
               </div>
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">14</div>

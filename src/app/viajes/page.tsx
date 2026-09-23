@@ -1,21 +1,21 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { viajes, type ViajeStatus } from "@/data/mock";
+import { Traslado, type Trasladotatus } from "@/data/mock";
 import { Badge, Button, Input, Card } from "@/components/ui";
 import { money } from "@/lib/utils";
 import { Search, Plus, Filter, ArrowUpRight } from "lucide-react";
 
-const tabs: (ViajeStatus | "Todos")[] = ["Todos","Pendiente de asignación","Conductor asignado","En curso","Finalizado","Cancelado","En revisión por incidencia"];
+const tabs: (Trasladotatus | "Todos")[] = ["Todos","Pendiente de asignación","Conductor asignado","En curso","Finalizado","Cancelado","En revisión por incidencia"];
 
 const statusVariant: Record<string, "success"|"warning"|"danger"|"neutral"|"outline"> = {
   "En curso":"warning", "Conductor asignado":"neutral", "Pendiente de asignación":"danger", "Finalizado":"success", "Cancelado":"outline", "En revisión por incidencia":"danger", "Solicitud recibida":"neutral", "Evidencia pendiente":"warning"
 };
 
-export default function ViajesPage(){
+export default function TrasladoPage(){
   const [q,setQ]=useState("");
   const [tab,setTab]=useState<string>("Todos");
-  const filtered = viajes.filter(v=>{
+  const filtered = Traslado.filter(v=>{
     const matchTab = tab==="Todos" || v.estatus===tab;
     const matchQ = !q || `${v.id} ${v.cliente} ${v.vehiculo} ${v.conductor??""}`.toLowerCase().includes(q.toLowerCase());
     return matchTab && matchQ;
@@ -24,10 +24,10 @@ export default function ViajesPage(){
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Viajes</h1>
+          <h1 className="text-2xl font-bold">Traslado</h1>
           <p className="text-sm text-slate-500">Centro operativo — crear, asignar, monitorear y cerrar traslados</p>
         </div>
-        <Button><Plus className="w-4 h-4 mr-2"/>Nuevo viaje</Button>
+        <Button><Plus className="w-4 h-4 mr-2"/>Nuevo Traslado</Button>
       </div>
 
       <Card className="p-3 flex flex-col lg:flex-row gap-3 lg:items-center">
@@ -52,7 +52,7 @@ export default function ViajesPage(){
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500 border-b">
               <tr>
-                <th className="text-left font-medium px-4 py-3">Viaje</th>
+                <th className="text-left font-medium px-4 py-3">Traslado</th>
                 <th className="text-left font-medium px-4 py-3">Cliente / Empresa</th>
                 <th className="text-left font-medium px-4 py-3">Ruta</th>
                 <th className="text-left font-medium px-4 py-3">Fecha</th>
@@ -79,7 +79,7 @@ export default function ViajesPage(){
                   <td className="px-4 py-3">{v.conductor ? <span className="inline-flex items-center gap-1.5"><span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-[10px]">{v.conductor.split(" ").map(s=>s[0]).join("")}</span>{v.conductor}</span> : <span className="text-slate-400 text-xs">Sin asignar</span>}</td>
                   <td className="px-4 py-3"><Badge variant={statusVariant[v.estatus] ?? "neutral"}>{v.estatus}</Badge></td>
                   <td className="px-4 py-3 text-right font-semibold">{money(v.tarifa)}</td>
-                  <td className="px-4 py-3"><Link href={`/viajes/${v.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-[#ff4d11] hover:underline">Detalle <ArrowUpRight className="w-3 h-3"/></Link></td>
+                  <td className="px-4 py-3"><Link href={`/Traslado/${v.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-[#ff4d11] hover:underline">Detalle <ArrowUpRight className="w-3 h-3"/></Link></td>
                 </tr>
               ))}
             </tbody>

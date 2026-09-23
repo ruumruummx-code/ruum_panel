@@ -30,13 +30,13 @@ export default function UsuariosPage(){
               <button className="p-1 h-fit hover:bg-slate-100 rounded-lg"><MoreHorizontal className="w-4 h-4 text-slate-500"/></button>
             </div>
             <div className="grid grid-cols-3 gap-3 mt-4 text-center text-sm">
-              <div className="rounded-xl bg-slate-50 border p-2"><div className="font-bold">{u.viajes}</div><div className="text-xs text-slate-500">Viajes</div></div>
+              <div className="rounded-xl bg-slate-50 border p-2"><div className="font-bold">{u.Traslado}</div><div className="text-xs text-slate-500">Traslado</div></div>
               <div className="rounded-xl bg-slate-50 border p-2"><div className="font-bold">{u.registro}</div><div className="text-xs text-slate-500">Registro</div></div>
               <div className="rounded-xl bg-slate-50 border p-2"><div className="font-bold">{u.tel}</div><div className="text-xs text-slate-500">Tel</div></div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button variant="outline" size="sm" className="flex-1">Ver perfil</Button>
-              <Button variant="ghost" size="sm" className="flex-1">Ver viajes</Button>
+              <Button variant="ghost" size="sm" className="flex-1">Ver Traslado</Button>
             </div>
           </Card>
         ))}
