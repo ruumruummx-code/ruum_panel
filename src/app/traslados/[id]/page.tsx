@@ -1,15 +1,15 @@
-import { Traslado } from "@/data/mock";
+import { traslados } from "@/data/mock";
 import { Card, Badge, Button } from "@/components/ui";
 import { money } from "@/lib/utils";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Car, User, CreditCard, Clock, Camera, FileText, AlertTriangle } from "lucide-react";
 
-export default async function TrasladoDetalle({params}:{params: Promise<{id:string}>}){
+export default async function trasladosDetalle({params}:{params: Promise<{id:string}>}){
   const {id}= await params;
-  const v = Traslado.find(x=>x.id===id) ?? Traslado[0];
+  const v = traslados.find(x=>x.id===id) ?? traslados[0];
   return (
     <div className="space-y-4">
-      <Link href="/Traslado" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft className="w-4 h-4"/> Volver a Traslado</Link>
+      <Link href="/traslados" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft className="w-4 h-4"/> Volver a traslados</Link>
 
       <div className="flex flex-wrap gap-3 items-start justify-between">
         <div>
@@ -106,7 +106,7 @@ export default async function TrasladoDetalle({params}:{params: Promise<{id:stri
                 {t:"Conductor aceptó", d:"21 Sep 09:22", done:true},
                 {t:"Llegada a origen", d:"21 Sep 09:35", done:true},
                 {t:"Evidencia inicial cargada", d:"21 Sep 09:38 • 6 fotos", done:true},
-                {t:"Traslado en curso", d:"Ahora • 187 km", done:true, current:true},
+                {t:"traslados en curso", d:"Ahora • 187 km", done:true, current:true},
                 {t:"Evidencia final pendiente", d:"Pendiente llegada destino", done:false},
                 {t:"Entrega confirmada", d:"Pendiente", done:false},
               ].map(s=>(
@@ -133,7 +133,7 @@ export default async function TrasladoDetalle({params}:{params: Promise<{id:stri
             <div className="grid grid-cols-2 gap-2 mt-3">
               <Button variant="outline" size="sm">Editar horario</Button>
               <Button variant="outline" size="sm">Cambiar estatus</Button>
-              <Button variant="outline" size="sm">Cancelar Traslado</Button>
+              <Button variant="outline" size="sm">Cancelar traslados</Button>
               <Button variant="secondary" size="sm">Marcar finalizado</Button>
             </div>
           </Card>

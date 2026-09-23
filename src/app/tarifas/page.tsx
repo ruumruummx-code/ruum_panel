@@ -168,7 +168,7 @@ create policy tad_config_all on public.tad_config for all using (true) with chec
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
           <div className="space-y-4">
             <Card className="p-5">
-              <h3 className="font-semibold flex items-center gap-2"><Calculator className="w-4 h-4 text-[#ff4d11]"/> Parámetros del traslado</h3>
+              <h3 className="font-semibold flex items-center gap-2"><Calculator className="w-4 h-4 text-[#ff4d11]"/> Parámetros del traslados</h3>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600">Distancia (km)</label>

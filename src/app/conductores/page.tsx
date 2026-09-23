@@ -27,19 +27,19 @@ export default function ConductoresPage(){
                 <div className="font-semibold">{c.nombre}</div>
                 <div className="text-xs text-slate-500">{c.tel} • {c.id}</div>
                 <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                  <Badge variant={c.disp==="Disponible"?"success":c.disp==="En Traslado"?"warning":"neutral"}>{c.disp}</Badge>
+                  <Badge variant={c.disp==="Disponible"?"success":c.disp==="En traslados"?"warning":"neutral"}>{c.disp}</Badge>
                   <Badge variant={c.cert==="Activo"?"success":c.cert==="Vencido"?"danger":"warning"}>{c.cert}</Badge>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-              <div className="rounded-xl border bg-slate-50 p-2"><div className="font-bold">{c.Traslado}</div><div className="text-[11px] text-slate-500">Traslado</div></div>
+              <div className="rounded-xl border bg-slate-50 p-2"><div className="font-bold">{c.traslados}</div><div className="text-[11px] text-slate-500">traslados</div></div>
               <div className="rounded-xl border bg-slate-50 p-2 flex flex-col items-center"><div className="font-bold flex items-center gap-1">{c.cal || "—"} {c.cal ? <Star className="w-3 h-3 fill-amber-400 text-amber-400"/>:null}</div><div className="text-[11px] text-slate-500">Calificación</div></div>
               <div className="rounded-xl border bg-slate-50 p-2"><div className="font-bold text-xs">{money(c.ganancias)}</div><div className="text-[11px] text-slate-500">Ganancias</div></div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button variant="outline" size="sm" className="flex-1">Ver perfil</Button>
-              <Button size="sm" className="flex-1">Asignar Traslado</Button>
+              <Button size="sm" className="flex-1">Asignar traslados</Button>
             </div>
           </Card>
         ))}

@@ -89,12 +89,12 @@ export default function LoginPage(){
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-medium w-fit">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/> Plataforma operativa en vivo
             </div>
-            <h1 className="text-4xl font-black leading-tight mt-4">La consola que mueve cada traslado.</h1>
-            <p className="text-white/60 mt-3 leading-relaxed">Valida usuarios y conductores, asigna Traslado, revisa evidencia, atiende incidencias y controla pagos — todo desde un solo lugar.</p>
+            <h1 className="text-4xl font-black leading-tight mt-4">La consola que mueve cada traslados.</h1>
+            <p className="text-white/60 mt-3 leading-relaxed">Valida usuarios y conductores, asigna traslados, revisa evidencia, atiende incidencias y controla pagos — todo desde un solo lugar.</p>
             <div className="grid grid-cols-3 gap-3 mt-8">
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">8</div>
-                <div className="text-xs opacity-60">Traslado activos</div>
+                <div className="text-xs opacity-60">traslados activos</div>
               </div>
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">14</div>
@@ -162,7 +162,7 @@ export default function LoginPage(){
                     <span className={`w-8 h-8 rounded-xl grid place-items-center border text-white shrink-0 ${r.color}`}><Icon className="w-4 h-4"/></span>
                     <span className="min-w-0 flex-1">
                       <span className="text-xs font-bold leading-none block">{r.label}</span>
-                      <span className="text-[11px] text-slate-500 leading-tight block mt-1 line-clamp-2">{r.id==="superadmin" ? "Acceso total" : r.id==="admin_operativo" ? "Traslados, conductores..." : r.id==="finanzas" ? "Pagos y reportes" : r.id==="soporte" ? "Usuarios e incidencias" : r.id==="validador" ? "Documentos" : "Empresas y comercial"}</span>
+                      <span className="text-[11px] text-slate-500 leading-tight block mt-1 line-clamp-2">{r.id==="superadmin" ? "Acceso total" : r.id==="admin_operativo" ? "traslados, conductores..." : r.id==="finanzas" ? "Pagos y reportes" : r.id==="soporte" ? "Usuarios e incidencias" : r.id==="validador" ? "Documentos" : "Empresas y comercial"}</span>
                       <span className="text-[11px] font-mono text-slate-400 block mt-1">{DEMO_CREDS[r.id].email}</span>
                     </span>
                     {isLoading ? <span className="text-xs">…</span> : <Zap className="w-3 h-3 text-amber-500 shrink-0 mt-1"/>}

@@ -18,7 +18,7 @@ export default function IncidenciasPage(){
                 <span className="font-mono font-bold text-sm">{i.id}</span>
                 <Badge variant="outline">{i.tipo}</Badge>
                 <Badge variant={i.estatus==="Resuelta"?"success":i.estatus==="Nueva"?"danger":"warning"}>{i.estatus}</Badge>
-                <span className="text-xs text-slate-500">Traslado {i.Traslado} • {i.fecha}</span>
+                <span className="text-xs text-slate-500">traslados {i.traslados} • {i.fecha}</span>
               </div>
               <div className="text-sm mt-1">{i.desc}</div>
               <div className="text-xs text-slate-500 mt-1">Responsable: {i.responsable}</div>

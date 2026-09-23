@@ -12,7 +12,7 @@ import {
 
 const nav = [
   { href:"/", label:"Dashboard", icon: LayoutDashboard },
-  { href:"/Traslado", label:"Traslado", icon: Truck, badge: "8" },
+  { href:"/traslados", label:"traslados", icon: Truck, badge: "8" },
   { href:"/usuarios", label:"Usuarios", icon: Users },
   { href:"/conductores", label:"Conductores", icon: Car },
   { href:"/evidencia", label:"Evidencia", icon: Camera, badge: "6" },
@@ -140,13 +140,13 @@ export default function AdminShell({children}:{children:React.ReactNode}){
           <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
             <span className="hidden lg:inline">Operación en vivo</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"/>
-            <span className="text-slate-900 font-medium">8 Traslado activos</span>
+            <span className="text-slate-900 font-medium">8 traslados activos</span>
             <span className={`ml-3 hidden lg:inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${role==="superadmin"?"bg-slate-900 text-white border-slate-900":"bg-slate-100 text-slate-700"}`}><Shield className="w-3 h-3"/>{roleDef.label}</span>
           </div>
           <div className="flex-1 flex justify-center lg:justify-start lg:ml-6">
             <div className="relative w-full max-w-[480px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-              <input placeholder="Buscar Traslado, usuario, conductor, empresa..." className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20"/>
+              <input placeholder="Buscar traslados, usuario, conductor, empresa..." className="w-full h-9 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20"/>
             </div>
           </div>
           <button className="relative p-2 rounded-xl hover:bg-slate-100">

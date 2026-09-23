@@ -8,7 +8,7 @@ export type RoleId =
 
 export type Permission =
   | "dashboard:view"
-  | "Traslado:view" | "Traslado:manage"
+  | "traslados:view" | "traslados:manage"
   | "usuarios:view" | "usuarios:manage"
   | "conductores:view" | "conductores:manage"
   | "evidencia:view" | "evidencia:manage"
@@ -43,7 +43,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
     color: "bg-[#ff4d11] text-white border-[#ff4d11]",
     permissions: [
       "dashboard:view",
-      "Traslado:view","Traslado:manage",
+      "traslados:view","traslados:manage",
       "conductores:view","conductores:manage",
       "evidencia:view","evidencia:manage",
       "incidencias:view","incidencias:manage",
@@ -65,7 +65,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
       "dashboard:view",
       "pagos:view","pagos:manage",
       "reportes:view",
-      "Traslado:view", // para conciliar
+      "traslados:view", // para conciliar
       "empresas:view",
     ],
   },
@@ -79,7 +79,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
       "usuarios:view","usuarios:manage",
       "conductores:view",
       "incidencias:view","incidencias:manage",
-      "Traslado:view",
+      "traslados:view",
       "evidencia:view",
       "documentos:view",
     ],
@@ -107,7 +107,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
       "empresas:view","empresas:manage",
       "usuarios:view","usuarios:manage",
       "tarifas:view",
-      "Traslado:view",
+      "traslados:view",
       "reportes:view",
     ],
   },
@@ -115,7 +115,7 @@ export const ROLES: Record<RoleId, RoleDef> = {
 
 export const ALL_PERMISSIONS: Permission[] = [
   "dashboard:view",
-  "Traslado:view","Traslado:manage",
+  "traslados:view","traslados:manage",
   "usuarios:view","usuarios:manage",
   "conductores:view","conductores:manage",
   "evidencia:view","evidencia:manage",
@@ -139,7 +139,7 @@ export function hasPermission(role: RoleId, perm: Permission): boolean {
 export function canAccessRoute(role: RoleId, href: string): boolean {
   const map: Record<string, Permission> = {
     "/": "dashboard:view",
-    "/Traslado": "Traslado:view",
+    "/traslados": "traslados:view",
     "/usuarios": "usuarios:view",
     "/conductores": "conductores:view",
     "/evidencia": "evidencia:view",
@@ -151,7 +151,7 @@ export function canAccessRoute(role: RoleId, href: string): boolean {
     "/reportes": "reportes:view",
     "/configuracion": "config:view",
   };
-  // subrutas: /Traslado/123 -> /Traslado
+  // subrutas: /traslados/123 -> /traslados
   const base = "/" + href.replace(/^\//,"").split("/")[0];
   const key = href === "/" ? "/" : base;
   const perm = map[key];

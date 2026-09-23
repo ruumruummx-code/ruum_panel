@@ -27,7 +27,7 @@ export default function EmpresasPage(){
             </div>
             <div className="mt-3 text-sm space-y-1">
               <div className="flex justify-between"><span className="text-slate-500">Contacto</span><span className="font-medium">{e.contacto}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Traslado</span><span className="font-bold">{e.Traslado}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">traslados</span><span className="font-bold">{e.traslados}</span></div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button variant="outline" size="sm" className="flex-1">Ver perfil</Button>
