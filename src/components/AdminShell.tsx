@@ -3,11 +3,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth, INTERNAL_USERS } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import { canAccessRoute, ROLES } from "@/lib/roles";
 import {
   LayoutDashboard, Truck, Users, Car, Camera, AlertTriangle,
-  CreditCard, FileCheck, Tags, Building2, BarChart3, Settings, Menu, X, Search, Bell, ChevronDown, LogOut, Shield, UserCog
+  CreditCard, FileCheck, Tags, Building2, BarChart3, Settings, Menu, X, Search, Bell, ChevronDown, LogOut, Shield
 } from "lucide-react";
 
 const nav = [
@@ -28,15 +28,13 @@ const nav = [
 export default function AdminShell({children}:{children:React.ReactNode}){
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [showSwitcher, setShowSwitcher] = useState(false);
-  const { user, role, setUserId, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const roleDef = ROLES[role];
   const filteredNav = nav.filter(item => canAccessRoute(role, item.href));
   const isBlocked = !canAccessRoute(role, pathname);
 
   return (
     <div className="min-h-screen flex bg-[#f8fafc]">
-      {/* Sidebar desktop */}
       <aside className="hidden lg:flex w-[260px] shrink-0 flex-col bg-[#0b0f1a] text-slate-200 sticky top-0 h-screen">
         <div className="h-[64px] flex items-center gap-3 px-6 border-b border-white/10">
           <div className="w-9 h-9 rounded-xl bg-[#ff4d11] flex items-center justify-center font-black text-white text-sm">RR</div>
@@ -53,7 +51,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
                 {roleDef.label}
                 {role==="superadmin" && <span className="bg-[#ff4d11] text-white text-[10px] px-1.5 py-0.5 rounded-full">● SUPER</span>}
               </div>
-              <div className="text-[11px] text-white/50 truncate">{role==="superadmin" ? "Acceso total + gestión de roles" : roleDef.description.slice(0,48)+"..."}</div>
+              <div className="text-[11px] text-white/50 truncate">{role==="superadmin" ? "Acceso total + gestión de usuarios y roles" : roleDef.description.slice(0,48)+"..."}</div>
             </div>
           </div>
         </div>
@@ -74,7 +72,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
             </div>
           )}
         </nav>
-        <div className="p-3 border-t border-white/10 space-y-2">
+        <div className="p-3 border-t border-white/10">
           <div className="rounded-xl bg-white/5 p-3 flex items-center gap-3">
             <img src={user.avatar} alt="" className="w-9 h-9 rounded-full"/>
             <div className="flex-1 min-w-0">
@@ -83,29 +81,9 @@ export default function AdminShell({children}:{children:React.ReactNode}){
             </div>
             <button onClick={signOut} title="Cerrar sesión" className="p-1.5 rounded-lg hover:bg-white/10"><LogOut className="w-4 h-4 text-white/60"/></button>
           </div>
-          <button onClick={()=>setShowSwitcher(v=>!v)} className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-medium py-2">
-            <UserCog className="w-3.5 h-3.5"/> Cambiar rol (demo)
-          </button>
-          {showSwitcher && (
-            <div className="rounded-xl bg-white text-slate-900 p-2 space-y-1 border shadow-xl">
-              <div className="text-[11px] font-bold text-slate-500 px-2 py-1">Simular sesión como:</div>
-              {INTERNAL_USERS.map(u=>(
-                <button key={u.id} onClick={()=>{ setUserId(u.id); setShowSwitcher(false); }} className={`w-full text-left rounded-lg px-3 py-2 text-sm flex items-center gap-2 ${user.id===u.id ? "bg-slate-900 text-white" : "hover:bg-slate-100"}`}>
-                  <img src={u.avatar} alt="" className="w-6 h-6 rounded-full"/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium leading-none text-xs">{u.nombre}</div>
-                    <div className="text-[11px] opacity-60">{ROLES[u.role].label}</div>
-                  </div>
-                  {user.id===u.id && <span className="text-xs">✓</span>}
-                </button>
-              ))}
-              <div className="text-[11px] text-slate-400 px-2 pt-1">Solo Superadmin puede asignar roles reales. Esto es un switch de demo.</div>
-            </div>
-          )}
         </div>
       </aside>
 
-      {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={()=>setOpen(false)}/>
@@ -130,6 +108,9 @@ export default function AdminShell({children}:{children:React.ReactNode}){
                 return <Link key={item.href} href={item.href} onClick={()=>setOpen(false)} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium", active ? "bg-white text-slate-900" : "text-slate-400")}><Icon className="w-[18px] h-[18px]"/>{item.label}</Link>
               })}
             </nav>
+            <div className="p-3 border-t border-white/10">
+              <button onClick={signOut} className="w-full flex items-center justify-center gap-2 rounded-xl bg-white text-slate-900 py-2.5 text-sm font-medium">Cerrar sesión</button>
+            </div>
           </aside>
         </div>
       )}
@@ -165,7 +146,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
               <Shield className="w-10 h-10 mx-auto text-amber-600"/>
               <h2 className="text-lg font-bold mt-3">Acceso restringido</h2>
               <p className="text-sm text-slate-600 mt-2">Tu rol <b>{roleDef.label}</b> no tiene permiso para ver <code className="bg-white border rounded px-1.5 py-0.5">{pathname}</code>.</p>
-              <p className="text-xs text-slate-500 mt-2">Solicita al Superadministrador que te asigne el permiso. Usa el switch de rol en la barra lateral para probar otro perfil.</p>
+              <p className="text-xs text-slate-500 mt-2">Solicita al Superadministrador que te asigne el permiso.</p>
               <Link href="/" className="inline-flex mt-4 bg-slate-900 text-white rounded-xl px-4 py-2 text-sm font-medium">Ir al Dashboard</Link>
             </div>
           ) : children}
