@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { ROLES, type RoleId } from "@/lib/roles";
 import { INTERNAL_USERS } from "@/lib/auth";
@@ -25,30 +25,30 @@ const DEMO_CREDS: Record<string, { email: string; password: string }> = {
   comercial: { email:"ana@ruum.mx", password:"Ruum2026!" },
 };
 
-export default function LoginPage(){
+function LoginContent(){
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
+  const callbackError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(callbackError ? "Sesión expirada o callback inválido. Vuelve a iniciar sesión." : null);
 
   const doLogin = async (e: string, p: string, roleHint?: string)=>{
     setError(null); setLoading(roleHint ?? "form");
     const supabase = getSupabaseBrowser();
-    // Fallback demo si no hay Supabase configurado: solo localStorage
     if(!supabase){
-      // demo local
       const user = INTERNAL_USERS.find(u=> u.email.toLowerCase()===e.toLowerCase());
       if(!user){ setError("Usuario demo no encontrado"); setLoading(null); return; }
       localStorage.setItem("ruum_user_id", user.id);
       localStorage.setItem("ruum_role", user.role);
-      router.push("/");
+      router.push(next);
       return;
     }
     const { error } = await supabase.auth.signInWithPassword({ email:e, password:p });
     if(error){
-      // Si es demo y no existe usuario en Supabase Auth, mostrar ayuda
       if(Object.values(DEMO_CREDS).some(c=>c.email===e)){
         setError(`${error.message} — ¿Creaste los usuarios en Supabase Auth? Ver instrucciones abajo.`);
       } else {
@@ -57,7 +57,7 @@ export default function LoginPage(){
       setLoading(null);
       return;
     }
-    router.push("/");
+    router.push(next);
     router.refresh();
   };
 
@@ -74,7 +74,6 @@ export default function LoginPage(){
 
   return (
     <div className="min-h-screen flex bg-[#f8fafc]">
-      {/* Left — branding */}
       <div className="hidden lg:flex w-[52%] bg-[#0b0f1a] text-white relative overflow-hidden flex-col">
         <div className="absolute inset-0 opacity-10" style={{backgroundImage:"radial-gradient(#fff 1px, transparent 1px)", backgroundSize:"22px 22px"}}/>
         <div className="relative z-10 p-10 flex flex-col h-full">
@@ -89,12 +88,12 @@ export default function LoginPage(){
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-medium w-fit">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"/> Plataforma operativa en vivo
             </div>
-            <h1 className="text-4xl font-black leading-tight mt-4">La consola que mueve cada traslados.</h1>
+            <h1 className="text-4xl font-black leading-tight mt-4">La consola que mueve cada traslado.</h1>
             <p className="text-white/60 mt-3 leading-relaxed">Valida usuarios y conductores, asigna traslados, revisa evidencia, atiende incidencias y controla pagos — todo desde un solo lugar.</p>
             <div className="grid grid-cols-3 gap-3 mt-8">
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">8</div>
-                <div className="text-xs opacity-60">traslados activos</div>
+                <div className="text-xs opacity-60">Traslados activos</div>
               </div>
               <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
                 <div className="text-2xl font-black">14</div>
@@ -110,7 +109,6 @@ export default function LoginPage(){
         </div>
       </div>
 
-      {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
         <div className="w-full max-w-[440px]">
           <div className="lg:hidden flex items-center gap-3 mb-6">
@@ -141,11 +139,12 @@ export default function LoginPage(){
               <Button type="submit" disabled={!!loading} className="w-full">
                 {loading==="form" ? "Ingresando..." : <><LogIn className="w-4 h-4 mr-2"/>Entrar a Ruum Admin</>}
               </Button>
+              {next !== "/" && <p className="text-xs text-slate-500 text-center">Serás redirigido a <code className="bg-slate-100 border rounded px-1">{next}</code> tras iniciar sesión.</p>}
             </form>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t"/></div>
-              <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-slate-500">o entra como demo (sin Supabase requerido)</span></div>
+              <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-slate-500">o entra como demo (Supabase Auth)</span></div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -162,7 +161,7 @@ export default function LoginPage(){
                     <span className={`w-8 h-8 rounded-xl grid place-items-center border text-white shrink-0 ${r.color}`}><Icon className="w-4 h-4"/></span>
                     <span className="min-w-0 flex-1">
                       <span className="text-xs font-bold leading-none block">{r.label}</span>
-                      <span className="text-[11px] text-slate-500 leading-tight block mt-1 line-clamp-2">{r.id==="superadmin" ? "Acceso total" : r.id==="admin_operativo" ? "traslados, conductores..." : r.id==="finanzas" ? "Pagos y reportes" : r.id==="soporte" ? "Usuarios e incidencias" : r.id==="validador" ? "Documentos" : "Empresas y comercial"}</span>
+                      <span className="text-[11px] text-slate-500 leading-tight block mt-1 line-clamp-2">{r.id==="superadmin" ? "Acceso total" : r.id==="admin_operativo" ? "Traslados, conductores..." : r.id==="finanzas" ? "Pagos y reportes" : r.id==="soporte" ? "Usuarios e incidencias" : r.id==="validador" ? "Documentos" : "Empresas y comercial"}</span>
                       <span className="text-[11px] font-mono text-slate-400 block mt-1">{DEMO_CREDS[r.id].email}</span>
                     </span>
                     {isLoading ? <span className="text-xs">…</span> : <Zap className="w-3 h-3 text-amber-500 shrink-0 mt-1"/>}
@@ -175,7 +174,7 @@ export default function LoginPage(){
               <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"/>
               <div>
                 <div className="font-bold">¿Primera vez?</div>
-                <div className="opacity-70 mt-1">Crea los 6 usuarios en <b>Supabase Auth</b> con las credenciales de arriba (password <code className="bg-white/10 border border-white/20 rounded px-1">Ruum2026!</code>) y asegúrate de tener <code className="bg-white/10 border rounded px-1">profiles</code> + <code className="bg-white/10 border rounded px-1">tad_config</code> creados con <code className="bg-white/10 border rounded px-1">supabase/schema.sql</code>.</div>
+                <div className="opacity-70 mt-1">Los 6 usuarios ya están creados en <b>Supabase Auth</b> (password <code className="bg-white/10 border border-white/20 rounded px-1">Ruum2026!</code>). Si ves error, ejecuta <code className="bg-white/10 border rounded px-1">supabase/schema.sql</code> para <code className="bg-white/10 border rounded px-1">profiles</code> + <code className="bg-white/10 border rounded px-1">tad_config</code>.</div>
                 <a href="https://supabase.com/dashboard/project/puomblsfbxuthcunmirg/auth/users" target="_blank" className="inline-flex items-center gap-1 mt-2 text-amber-300 hover:underline">Abrir Auth Users <ArrowRight className="w-3 h-3"/></a>
               </div>
             </div>
@@ -186,4 +185,8 @@ export default function LoginPage(){
       </div>
     </div>
   )
+}
+
+export default function LoginPageWrapper(){
+  return <Suspense fallback={<div className="min-h-screen grid place-items-center text-sm text-slate-500">Cargando...</div>}><LoginContent/></Suspense>
 }

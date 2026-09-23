@@ -12,7 +12,7 @@ import {
 
 const nav = [
   { href:"/", label:"Dashboard", icon: LayoutDashboard },
-  { href:"/traslados", label:"traslados", icon: Truck, badge: "8" },
+  { href:"/traslados", label:"Traslados", icon: Truck, badge: "8" },
   { href:"/usuarios", label:"Usuarios", icon: Users },
   { href:"/conductores", label:"Conductores", icon: Car },
   { href:"/evidencia", label:"Evidencia", icon: Camera, badge: "6" },

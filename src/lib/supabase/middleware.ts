@@ -7,7 +7,8 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const isPublic = PUBLIC_PATHS.some(p => request.nextUrl.pathname === p || request.nextUrl.pathname.startsWith(p + "/"));
+  const pathname = request.nextUrl.pathname;
+  const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + "/"));
 
   if (!url || !anonKey) return supabaseResponse;
 
@@ -24,17 +25,19 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Si no hay sesión y no es ruta pública → login
+  // No sesión y ruta protegida → login (preserva url completa con search)
   if (!user && !isPublic) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
-  // Si hay sesión y va a /login → dashboard
-  if (user && request.nextUrl.pathname === "/login") {
+  // Con sesión y en /login → dashboard (respeta ?next=)
+  if (user && pathname === "/login") {
+    const next = request.nextUrl.searchParams.get("next");
     const dashUrl = request.nextUrl.clone();
-    dashUrl.pathname = "/";
+    dashUrl.pathname = next && next.startsWith("/") ? next : "/";
+    dashUrl.search = "";
     return NextResponse.redirect(dashUrl);
   }
 
