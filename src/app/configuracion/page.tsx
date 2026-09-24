@@ -44,7 +44,7 @@ export default function ConfigPage(){
             id: u.id,
             nombre: u.nombre || u.email,
             email: u.email,
-            role: u.role as RoleId,
+            role: (u.user_role || u.role) as RoleId,
             avatar: `https://i.pravatar.cc/100?u=${u.email}`
           }));
           setUsers(mapped);

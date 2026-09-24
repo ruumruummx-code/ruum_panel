@@ -1,4 +1,4 @@
--- Ruum Panel — Schema Supabase
+-- Ruum Panel — Schema Supabase (corregido)
 -- Ejecutar en: Supabase Dashboard > SQL Editor > New query > Paste > Run
 -- Proyecto: puomblsfbxuthcunmirg
 
@@ -14,13 +14,11 @@ create table if not exists public.tad_config (
   updated_at timestamptz not null default now(),
   updated_by text
 );
+insert into public.tad_config (id) values (1) on conflict (id) do nothing;
 
-insert into public.tad_config (id) values (1)
-on conflict (id) do nothing;
-
--- 2) traslados — centro operativo (para conectar tabla traslados del panel)
+-- 2) traslados — centro operativo
 create table if not exists public.traslados (
-  id text primary key, -- RR-XXXXX
+  id text primary key,
   cliente text not null,
   empresa text,
   vehiculo text not null,
@@ -74,38 +72,12 @@ create table if not exists public.incidencias (
   created_at timestamptz default now()
 );
 
--- RLS — por ahora abierto para panel admin (ajustar a auth real después)
-alter table public.tad_config enable row level security;
-alter table public.traslados enable row level security;
-alter table public.conductores enable row level security;
-alter table public.empresas enable row level security;
-alter table public.incidencias enable row level security;
-
-do $$ begin
-  if not exists (select 1 from pg_policies where policyname='tad_config_all') then
-    create policy tad_config_all on public.tad_config for all using (true) with check (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname='traslados_all') then
-    create policy traslados_all on public.traslados for all using (true) with check (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname='conductores_all') then
-    create policy conductores_all on public.conductores for all using (true) with check (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname='empresas_all') then
-    create policy empresas_all on public.empresas for all using (true) with check (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname='incidencias_all') then
-    create policy incidencias_all on public.incidencias for all using (true) with check (true);
-  end if;
-end $$;
-
--- 6) RBAC — Perfiles internos (roles)
--- Usa auth.users.id cuando exista; por ahora profiles con id uuid libre para panel
+-- 6) RBAC — Perfiles internos (roles) — FIX: columna "user_role" (role es palabra reservada)
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
   nombre text not null,
-  role text not null check (role in ('superadmin','admin_operativo','finanzas','soporte','validador','comercial')),
+  user_role text not null check (user_role in ('superadmin','admin_operativo','finanzas','soporte','validador','comercial')),
   avatar text,
   is_active boolean not null default true,
   created_at timestamptz default now(),
@@ -113,17 +85,19 @@ create table if not exists public.profiles (
   updated_by uuid
 );
 
--- Seed 6 usuarios internos (id fijos para demo)
-insert into public.profiles (id, email, nombre, role) values
-  ('00000000-0000-0000-0000-000000000001', 'sofia@moviliax.mx', 'Sofía Ramírez', 'superadmin'),
-  ('00000000-0000-0000-0000-000000000002', 'diego@moviliax.mx', 'Diego Martínez', 'admin_operativo'),
-  ('00000000-0000-0000-0000-000000000003', 'valeria@ruum.mx', 'Valeria Torres', 'finanzas'),
-  ('00000000-0000-0000-0000-000000000004', 'laura@ruum.mx', 'Laura Gómez', 'soporte'),
-  ('00000000-0000-0000-0000-000000000005', 'jorge@ruum.mx', 'Jorge Herrera', 'validador'),
-  ('00000000-0000-0000-0000-000000000006', 'ana@ruum.mx', 'Ana López', 'comercial')
-on conflict (id) do nothing;
+-- Migración si vienes del schema anterior con columna "role"
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='role') then
+    alter table public.profiles rename column role to user_role;
+  end if;
+end $$;
 
--- 7) Bitácora de cambios de roles (auditoría — solo superadmin escribe)
+-- Seed superadmin principal (id real de auth.users para lomelinhectorm@gmail.com se insertará vía API; este seed es fallback)
+insert into public.profiles (email, nombre, user_role) values
+  ('lomelinhectorm@gmail.com', 'Hector Lomelin', 'superadmin')
+on conflict (email) do update set user_role = excluded.user_role, nombre = excluded.nombre;
+
+-- 7) Bitácora de cambios de roles
 create table if not exists public.role_audit (
   id uuid primary key default gen_random_uuid(),
   actor_id uuid references public.profiles(id),
@@ -133,20 +107,39 @@ create table if not exists public.role_audit (
   created_at timestamptz default now()
 );
 
+-- RLS
+alter table public.tad_config enable row level security;
+alter table public.traslados enable row level security;
+alter table public.conductores enable row level security;
+alter table public.empresas enable row level security;
+alter table public.incidencias enable row level security;
 alter table public.profiles enable row level security;
 alter table public.role_audit enable row level security;
 
-do $$ begin
-  if not exists (select 1 from pg_policies where policyname='profiles_all') then
-    create policy profiles_all on public.profiles for all using (true) with check (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname='role_audit_all') then
-    create policy role_audit_all on public.role_audit for all using (true) with check (true);
-  end if;
-end $$;
+-- Políticas (drop + create para evitar IF NOT EXISTS no soportado en CREATE POLICY)
+drop policy if exists tad_config_all on public.tad_config;
+create policy tad_config_all on public.tad_config for all using (true) with check (true);
 
--- Índices útiles
+drop policy if exists traslados_all on public.traslados;
+create policy traslados_all on public.traslados for all using (true) with check (true);
+
+drop policy if exists conductores_all on public.conductores;
+create policy conductores_all on public.conductores for all using (true) with check (true);
+
+drop policy if exists empresas_all on public.empresas;
+create policy empresas_all on public.empresas for all using (true) with check (true);
+
+drop policy if exists incidencias_all on public.incidencias;
+create policy incidencias_all on public.incidencias for all using (true) with check (true);
+
+drop policy if exists profiles_all on public.profiles;
+create policy profiles_all on public.profiles for all using (true) with check (true);
+
+drop policy if exists role_audit_all on public.role_audit;
+create policy role_audit_all on public.role_audit for all using (true) with check (true);
+
+-- Índices
 create index if not exists idx_traslados_estatus on public.traslados(estatus);
 create index if not exists idx_traslados_fecha on public.traslados(fecha);
-create index if not exists idx_profiles_role on public.profiles(role);
+create index if not exists idx_profiles_role on public.profiles(user_role);
 create index if not exists idx_profiles_email on public.profiles(email);

@@ -113,7 +113,7 @@ export default function Dashboard(){
             {[
               {t:"Evidencia final cargada", d:"RR-24084 • Fernando Cruz • hace 18 min", ok:true},
               {t:"Conductor aceptó traslados", d:"RR-24083 • Jorge Herrera • hace 32 min", ok:true},
-              {t:"Nuevo traslados solicitado", d:"RR-24086 • Roberto Salas • hace 51 min", ok:false},
+              {t:"Nuevo traslado solicitado", d:"RR-24086 • Roberto Salas • hace 51 min", ok:false},
               {t:"Pago liberado", d:"RR-24084 • $7,400 — GNP • hace 1 h", ok:true},
               {t:"Incidencia creada", d:"INC-881 • RR-24085 • hace 2 h", ok:false},
             ].map(r=>(

@@ -55,8 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if(data?.user?.email){
           setSupabaseEmail(data.user.email);
           // Intenta resolver rol desde profiles, fallback a INTERNAL_USERS
-          supabase.from("profiles").select("role, nombre").eq("email", data.user.email.toLowerCase()).maybeSingle().then(({data: prof}: any)=>{
-            const role = (prof?.role as RoleId) || (INTERNAL_USERS.find(u=>u.email.toLowerCase()===data.user.email.toLowerCase())?.role as RoleId) || "superadmin";
+          supabase.from("profiles").select("user_role, nombre").eq("email", data.user.email.toLowerCase()).maybeSingle().then(({data: prof}: any)=>{
+            const role = (prof?.user_role as RoleId) || (INTERNAL_USERS.find(u=>u.email.toLowerCase()===data.user.email.toLowerCase())?.role as RoleId) || "superadmin";
             const nombre = prof?.nombre || INTERNAL_USERS.find(u=>u.email.toLowerCase()===data.user.email.toLowerCase())?.nombre || data.user.email;
             if(role){
               setIsDemo(false);
@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem(STORAGE_KEY, match.role);
           } else {
             // Usuario creado desde Configuración — rol viene de profiles
-            supabase.from("profiles").select("role,nombre").eq("email", email.toLowerCase()).maybeSingle().then(({data: prof}: any)=>{
-              const role = (prof?.role as RoleId) || "soporte";
+            supabase.from("profiles").select("user_role,nombre").eq("email", email.toLowerCase()).maybeSingle().then(({data: prof}: any)=>{
+              const role = (prof?.user_role as RoleId) || "soporte";
               const nombre = prof?.nombre || email;
               const dyn: InternalUser = { id: session.user.id, nombre, email, role, avatar: `https://i.pravatar.cc/100?u=${email}` };
               setExternalUsers([dyn]);

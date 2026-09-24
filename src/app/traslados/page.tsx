@@ -27,7 +27,7 @@ export default function trasladosPage(){
           <h1 className="text-2xl font-bold">traslados</h1>
           <p className="text-sm text-slate-500">Centro operativo — crear, asignar, monitorear y cerrar traslados</p>
         </div>
-        <Button><Plus className="w-4 h-4 mr-2"/>Nuevo traslados</Button>
+        <Link href="/solicitud"><Button><Plus className="w-4 h-4 mr-2"/>Nuevo traslado</Button></Link>
       </div>
 
       <Card className="p-3 flex flex-col lg:flex-row gap-3 lg:items-center">
