@@ -28,8 +28,8 @@ import {
 const STORAGE_PASO3 = "ruum_solicitud_paso3";
 const STORAGE_COTIZACION = "ruum_cotizacion_result";
 
-// Mapbox token
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+// Mapbox ahora vía backend proxy (token oculto en servidor)
+// Frontend ya no expone NEXT_PUBLIC token — usa /api/mapbox/*
 
 // Types
 type Coords = [number, number]; // [lng, lat]
@@ -177,14 +177,14 @@ function DireccionBlock({
       setSearchLoading(false);
       return;
     }
-    if (!MAPBOX_TOKEN) return;
     setSearchLoading(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MAPBOX_TOKEN}&country=MX&language=es&limit=5&types=address,place,locality,neighborhood,postcode,poi`;
+        const url = `/api/mapbox/geocode?q=${encodeURIComponent(q)}&limit=5`;
         const res = await fetch(url);
         const data = await res.json();
+        if (!data.ok && data.error) throw new Error(data.error);
         setSuggestions(data.features || []);
         setShowSuggestions(true);
       } catch {
@@ -299,7 +299,6 @@ function DireccionBlock({
         </div>
         <p className="text-[11px] text-slate-400 mt-1.5">Escribe al menos 3 letras y elige una sugerencia. Precargamos calle, colonia, ciudad, estado y CP — puedes editarlos abajo.</p>
         {value.placeName && <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1 mt-2 truncate">📍 {value.placeName}</p>}
-        {!MAPBOX_TOKEN && <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-2">Mapbox token no configurado — captura manual habilitada.</p>}
       </div>
 
       {/* Grid dirección */}
@@ -462,29 +461,17 @@ export default function SolicitudPaso3Page() {
       }
       return;
     }
-    if (!MAPBOX_TOKEN) {
-      if (fallbackDistance) {
-        setRouteMetrics({ distanceKm: fallbackDistance.km, durationMin: fallbackDistance.min, source: "estimado" });
-      } else {
-        setRouteError("Mapbox token no configurado");
-        setNeedsManualReview(true);
-      }
-      return;
-    }
     setRouteLoading(true);
     setRouteError(null);
-    const coordsStr = coordsList.map((c) => `${c[0]},${c[1]}`).join(";");
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?access_token=${MAPBOX_TOKEN}&alternatives=false&geometries=geojson&overview=full`;
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
+        const coordsParam = coordsList.map((c) => `${c[0]},${c[1]}`).join(";");
+        const url = `/api/mapbox/directions?coords=${encodeURIComponent(coordsParam)}`;
         const res = await fetch(url, { signal: ctrl.signal });
         const data = await res.json();
-        if (!res.ok || !data.routes || data.routes.length === 0) throw new Error(data.message || "No se pudo resolver la ruta");
-        const route = data.routes[0];
-        const distanceKm = Math.round((route.distance / 1000) * 10) / 10;
-        const durationMin = Math.round(route.duration / 60);
-        setRouteMetrics({ distanceKm, durationMin, source: "mapbox" });
+        if (!data.ok) throw new Error(data.error || "No se pudo resolver la ruta");
+        setRouteMetrics({ distanceKm: data.distanceKm, durationMin: data.durationMin, source: data.source || "mapbox" });
         setNeedsManualReview(false);
       } catch (e: any) {
         if (e?.name === "AbortError") return;

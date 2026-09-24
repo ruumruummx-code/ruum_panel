@@ -38,7 +38,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mar
       gama: result.gama,
       confidence: result.confidence,
       mActivoBase: result.mActivoBase,
-      meta: { marcaInput: result.marcaInput, modeloInput: result.modeloInput, source: result.source },
+      categoria: (result.extra as any)?.categoria ?? null,
+      tipo: (result.extra as any)?.tipo ?? null,
+      meta: { marcaInput: result.marcaInput, modeloInput: result.modeloInput, source: result.source, modeloCatalogo: (result.extra as any)?.modeloCatalogo ?? null },
     },
     200
   );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MARCA_DEFAULTS, MODELO_EXACT, normalizeMarca } from "@/lib/vehiculos";
+import { MARCA_DEFAULTS, listModelosForMarca, normalizeMarca } from "@/lib/vehiculos";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +19,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mar
   if (!entry) {
     return json({ ok: false, error: `Marca '${marcaDec}' no encontrada`, marcasDisponibles: Object.values(MARCA_DEFAULTS).map((v) => v.canon) }, 404, "no-store");
   }
-  const modelos = Object.entries(MODELO_EXACT)
-    .filter(([k]) => k.startsWith(`${mNorm}::`))
-    .map(([k, v]) => ({ modelo: k.split("::")[1], segmento: v.segmento, gama: v.gama }))
-    .sort((a, b) => a.modelo.localeCompare(b.modelo));
+  const data = listModelosForMarca(marcaDec);
+  if (!data) {
+    return json({ ok: false, error: `Marca '${marcaDec}' no encontrada` }, 404, "no-store");
+  }
+  const modelos = data.modelos.sort((a, b) => a.modelo.localeCompare(b.modelo));
 
   return json(
     {
       ok: true,
-      marca: entry.canon,
+      marca: data.marca,
       segmentoDefault: entry.segmento,
       gamaDefault: entry.gama,
       modelos,
       total: modelos.length,
+      source: "catalogos/vehiculos-clasificacion.json",
       hint: `Usa /api/vehiculos/${encodeURIComponent(entry.canon)}/{{modelo}} o ?marca=${encodeURIComponent(entry.canon)}&modelo={{modelo}} para lookup exacto`,
     },
     200

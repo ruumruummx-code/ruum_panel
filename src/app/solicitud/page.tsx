@@ -5,10 +5,6 @@ import { money } from "@/lib/utils";
 import { Clock, Calendar, MapPin, Car, AlertCircle, CheckCircle2, Loader2, Sparkles, Wrench, ShieldCheck, ArrowRight, FileSearch } from "lucide-react";
 import Link from "next/link";
 
-const MARCAS = [
-  "Acura","Audi","BMW","BYD","Chevrolet","Chrysler","Dodge","Fiat","Ford","GMC","Honda","Hyundai","Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Mazda","Mercedes-Benz","MG","Mini","Mitsubishi","Nissan","Peugeot","Porsche","RAM","Renault","Seat","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo",
-];
-
 const CONDICIONES = ["Nueva","Seminueva","Usada"] as const;
 
 type Cuando = "inmediato" | "programado";
@@ -27,6 +23,7 @@ export default function SolicitudPaso1Page(){
   const [condicion, setCondicion] = useState<string>("");
   const [cuando, setCuando] = useState<Cuando>("inmediato");
   const [fechaProgramada, setFechaProgramada] = useState("");
+  const [horaProgramada, setHoraProgramada] = useState("");
 
   // UI state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -36,7 +33,59 @@ export default function SolicitudPaso1Page(){
   const [saved, setSaved] = useState(false);
   const [manualSent, setManualSent] = useState(false);
 
+  // Catálogo local
+  const [marcasCatalogo, setMarcasCatalogo] = useState<string[]>([
+    "Acura","Audi","BMW","BYD","Chevrolet","Chrysler","Dodge","Fiat","Ford","GMC","Honda","Hyundai","Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Mazda","Mercedes-Benz","MG","Mini","Mitsubishi","Nissan","Peugeot","Porsche","RAM","Renault","Seat","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo",
+  ]);
+  const [modelosCatalogo, setModelosCatalogo] = useState<string[]>([]);
+  const [modelosLoading, setModelosLoading] = useState(false);
+  const [clasificacion, setClasificacion] = useState<{ segmento:string; gama:string; confidence?:string }|null>(null);
+  const [clasificacionLoading, setClasificacionLoading] = useState(false);
+
   const hasLoadedRef = useRef(false);
+
+  // Cargar marcas desde catálogo local (API)
+  useEffect(()=>{
+    fetch("/api/vehiculos")
+      .then(r=>r.json())
+      .then(j=>{ if(j.marcasDisponibles && Array.isArray(j.marcasDisponibles)) setMarcasCatalogo(j.marcasDisponibles); })
+      .catch(()=>{});
+  },[]);
+
+  // Cargar modelos cuando cambia marca (catálogo local)
+  useEffect(()=>{
+    if(!marca || marca.trim().length<2){ setModelosCatalogo([]); return; }
+    setModelosLoading(true);
+    const ctrl=new AbortController();
+    fetch(`/api/vehiculos?marca=${encodeURIComponent(marca.trim())}`,{signal:ctrl.signal})
+      .then(async r=>{
+        if(!r.ok) throw new Error();
+        const j=await r.json();
+        if(j.modelos) setModelosCatalogo(j.modelos.map((x:any)=>x.modelo));
+        else setModelosCatalogo([]);
+      })
+      .catch(()=>setModelosCatalogo([]))
+      .finally(()=>setModelosLoading(false));
+    return ()=>ctrl.abort();
+  },[marca]);
+
+  // Clasificación automática por catálogo local (marca+modelo)
+  useEffect(()=>{
+    const m=marca.trim(), mo=modelo.trim();
+    if(!m || !mo){ setClasificacion(null); return; }
+    setClasificacionLoading(true);
+    const ctrl=new AbortController();
+    const t=setTimeout(async()=>{
+      try{
+        const r=await fetch(`/api/vehiculos?marca=${encodeURIComponent(m)}&modelo=${encodeURIComponent(mo)}`,{signal:ctrl.signal});
+        const j=await r.json();
+        if(r.ok) setClasificacion({ segmento:j.segmento, gama:j.gama, confidence:j.confidence });
+        else setClasificacion(null);
+      }catch{ setClasificacion(null); }
+      finally{ setClasificacionLoading(false); }
+    },350);
+    return ()=>{ clearTimeout(t); ctrl.abort(); };
+  },[marca, modelo]);
 
   // Load from localStorage
   useEffect(()=>{
@@ -51,6 +100,7 @@ export default function SolicitudPaso1Page(){
         if(d.condicion) setCondicion(d.condicion);
         if(d.cuando) setCuando(d.cuando);
         if(d.fechaProgramada) setFechaProgramada(d.fechaProgramada);
+        if(d.horaProgramada) setHoraProgramada(d.horaProgramada);
       }
     } catch {}
     hasLoadedRef.current = true;
@@ -59,22 +109,20 @@ export default function SolicitudPaso1Page(){
   // Auto-guardado
   useEffect(()=>{
     if(!hasLoadedRef.current) return;
-    const data = { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada };
+    const data = { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada, horaProgramada };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); setSaved(true); const t=setTimeout(()=>setSaved(false),1200); return ()=>clearTimeout(t);} catch {}
-  },[cpOrigen,cpDestino,marca,modelo,condicion,cuando,fechaProgramada]);
+  },[cpOrigen,cpDestino,marca,modelo,condicion,cuando,fechaProgramada,horaProgramada]);
 
   // Validaciones
   const errors = useMemo(()=>{
     const e: Record<string,string> = {};
     if(cpOrigen && !fieldValidCp(cpOrigen)) e.cpOrigen = "El Código Postal debe tener 5 dígitos.";
     if(cpDestino && !fieldValidCp(cpDestino)) e.cpDestino = "El Código Postal debe tener 5 dígitos.";
-    // Mostrar required solo si touched y vacío no es helper pero podemos marcar
     return e;
   },[cpOrigen,cpDestino]);
 
   const cpOrigenError = (touched.cpOrigen || cpOrigen.length>0) && !fieldValidCp(cpOrigen) ? "El Código Postal debe tener 5 dígitos." : null;
   const cpDestinoError = (touched.cpDestino || cpDestino.length>0) && !fieldValidCp(cpDestino) ? (cpDestino.length>0 ? "El Código Postal debe tener 5 dígitos." : null) : null;
-  // Para destino si no hay helper pero spec dice muestra helper/error si no cumple formato de 5 dígitos -> usamos mismo mensaje
   const showCpDestinoHelper = !cpDestinoError && cpDestino.length>0 && !fieldValidCp(cpDestino);
 
   const isCpOrigenValid = fieldValidCp(cpOrigen);
@@ -82,7 +130,7 @@ export default function SolicitudPaso1Page(){
   const isMarcaValid = marca.trim().length>0;
   const isModeloValid = modelo.trim().length>0;
   const isCondicionValid = condicion.length>0;
-  const isFechaValid = cuando==="inmediato" ? true : (fechaProgramada.length>0 && !isNaN(new Date(fechaProgramada).getTime()));
+  const isFechaValid = cuando==="inmediato" ? true : (fechaProgramada.length>0 && !isNaN(new Date(fechaProgramada).getTime()) && /^([01]\d|2[0-3]):([0-5]\d)$/.test(horaProgramada));
 
   const isFormMinValid = isCpOrigenValid && isCpDestinoValid && isMarcaValid && isModeloValid && isCondicionValid && isFechaValid;
   const canContinuar = !!cotizacion && isFormMinValid && !loading;
@@ -111,6 +159,7 @@ export default function SolicitudPaso1Page(){
             condicion,
             cuando,
             fechaProgramada: cuando==="programado" ? fechaProgramada : undefined,
+            horaProgramada: cuando==="programado" ? horaProgramada : undefined,
           }),
           signal: controller.signal,
         });
@@ -133,7 +182,7 @@ export default function SolicitudPaso1Page(){
       }
     },650);
     return ()=>{ clearTimeout(t); controller.abort(); };
-  },[cpOrigen,cpDestino,marca,modelo,condicion,cuando,fechaProgramada,isFormMinValid]);
+  },[cpOrigen,cpDestino,marca,modelo,condicion,cuando,fechaProgramada,horaProgramada,isFormMinValid]);
 
   // Persistir cotización para Paso 2 (tarifa aceptada)
   useEffect(()=>{
@@ -146,15 +195,14 @@ export default function SolicitudPaso1Page(){
   },[cotizacion]);
 
   const handleGuardarManual = ()=>{
-    // Persist and show confirmation
-    const payload = { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada, origen:"manual_review" };
+    const payload = { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada, horaProgramada, origen:"manual_review" };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
     setManualSent(true);
     setTimeout(()=>setManualSent(false),3000);
   };
 
   const clearForm = ()=>{
-    setCpOrigen(""); setCpDestino(""); setMarca(""); setModelo(""); setCondicion(""); setCuando("inmediato"); setFechaProgramada("");
+    setCpOrigen(""); setCpDestino(""); setMarca(""); setModelo(""); setCondicion(""); setCuando("inmediato"); setFechaProgramada(""); setHoraProgramada("");
     setCotizacion(null); setCotizacionError(null);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
@@ -225,33 +273,57 @@ export default function SolicitudPaso1Page(){
               </p>
             </div>
 
-            {/* Marca */}
+            {/* Marca — catálogo local */}
             <div>
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><Car className="w-3 h-3"/> Marca <span className="text-red-500">*</span></label>
-              <select
+              <input
+                list="marcas-paso1"
+                placeholder="Selecciona marca"
                 value={marca}
                 onChange={e=> setMarca(e.target.value)}
                 onBlur={()=>setTouched(s=>({...s, marca:true}))}
                 className={`mt-1.5 w-full h-10 rounded-xl border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11] ${(!isMarcaValid && touched.marca) ? "border-red-300" : "border-slate-200"}`}
-              >
-                <option value="">Selecciona marca</option>
-                {MARCAS.map(m=><option key={m} value={m}>{m}</option>)}
-              </select>
-              <p className="text-[11px] text-slate-400 mt-1.5 min-h-[16px]">{(!isMarcaValid && touched.marca) ? <span className="text-red-600 font-medium">Requerido para el cálculo.</span> : "Requerido para el cálculo."}</p>
+              />
+              <datalist id="marcas-paso1">
+                {marcasCatalogo.map(m=><option key={m} value={m} />)}
+              </datalist>
+              <p className="text-[11px] text-slate-400 mt-1.5 min-h-[16px]">{(!isMarcaValid && touched.marca) ? <span className="text-red-600 font-medium">Requerido para el cálculo.</span> : "Selección del catálogo local."}</p>
             </div>
 
-            {/* Modelo */}
+            {/* Modelo — catálogo local ligado a marca */}
             <div>
               <label className="text-xs font-bold text-slate-700">Modelo <span className="text-red-500">*</span></label>
               <input
-                placeholder="Escribe el modelo"
+                list="modelos-paso1"
+                placeholder={modelosCatalogo.length ? `Ej. ${modelosCatalogo[0]}` : "Escribe el modelo"}
                 value={modelo}
                 onChange={e=> setModelo(e.target.value)}
                 onBlur={()=>setTouched(s=>({...s, modelo:true}))}
                 className={`mt-1.5 h-10 w-full rounded-xl border bg-white px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11] ${(!isModeloValid && touched.modelo) ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
               />
-              <p className="text-[11px] text-slate-400 mt-1.5 min-h-[16px]">{(!isModeloValid && touched.modelo) ? <span className="text-red-600 font-medium">Requerido para el cálculo.</span> : "Ej. Jetta, Civic, NP300"}</p>
+              <datalist id="modelos-paso1">
+                {modelosCatalogo.map(m=><option key={m} value={m} />)}
+              </datalist>
+              <p className="text-[11px] text-slate-400 mt-1.5 min-h-[16px] flex items-center gap-1">
+                {modelosLoading ? <><Loader2 className="w-3 h-3 animate-spin"/> Cargando modelos…</> : (!isModeloValid && touched.modelo) ? <span className="text-red-600 font-medium">Requerido para el cálculo.</span> : modelosCatalogo.length ? `Catálogo ${marca}: ${modelosCatalogo.slice(0,3).join(", ")}${modelosCatalogo.length>3?"…":""}` : "Ej. Jetta, Civic, NP300"}
+              </p>
             </div>
+
+            {/* Clasificación automática (catálogo local) */}
+            {(clasificacion || clasificacionLoading) && (
+              <div className="lg:col-span-2">
+                <div className="rounded-xl border bg-slate-50 p-3 flex items-center gap-2 text-xs">
+                  {clasificacionLoading ? <><Loader2 className="w-3 h-3 animate-spin"/> Clasificando por catálogo…</> : clasificacion ? (
+                    <>
+                      <span className="font-bold">Catálogo:</span>
+                      <span className="bg-slate-900 text-white rounded-full px-2 py-0.5 font-bold">{clasificacion.segmento}</span>
+                      <span className="bg-amber-100 border border-amber-200 text-amber-800 rounded-full px-2 py-0.5 font-bold">{clasificacion.gama}</span>
+                      <span className="text-slate-400 ml-auto capitalize">{clasificacion.confidence}</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            )}
 
             {/* Condición */}
             <div>
@@ -288,16 +360,32 @@ export default function SolicitudPaso1Page(){
                 </button>
               </div>
               {cuando==="programado" && (
-                <div className="mt-3">
-                  <label className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Calendar className="w-3 h-3"/> Fecha programada</label>
-                  <input
-                    type="date"
-                    value={fechaProgramada}
-                    onChange={e=> setFechaProgramada(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11]"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">Selecciona día y el sistema asigna tarifa nocturna/diurna automáticamente.</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Calendar className="w-3 h-3"/> Fecha programada <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      value={fechaProgramada}
+                      onChange={e=> setFechaProgramada(e.target.value)}
+                      onBlur={()=>setTouched(s=>({...s, fechaProgramada:true}))}
+                      min={new Date().toISOString().split("T")[0]}
+                      className={`mt-1.5 h-10 w-full rounded-xl border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11] ${!fechaProgramada && touched.fechaProgramada ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Clock className="w-3 h-3"/> Hora del traslado <span className="text-red-500">*</span></label>
+                    <input
+                      type="time"
+                      value={horaProgramada}
+                      onChange={e=> setHoraProgramada(e.target.value)}
+                      onBlur={()=>setTouched(s=>({...s, horaProgramada:true}))}
+                      step={900}
+                      className={`mt-1.5 h-10 w-full rounded-xl border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11] ${!horaProgramada && touched.horaProgramada ? "border-red-300 bg-red-50/30" : horaProgramada && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(horaProgramada) ? "border-red-300" : "border-slate-200"}`}
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 col-span-2">
+                    {(!fechaProgramada || !horaProgramada) && touched.fechaProgramada ? <span className="text-red-600 font-medium">Fecha y hora son obligatorias para programar.</span> : "La hora define tarifa diurna (06:00-20:00) o nocturna (20:01-05:59) automáticamente."}
+                  </p>
                 </div>
               )}
             </div>

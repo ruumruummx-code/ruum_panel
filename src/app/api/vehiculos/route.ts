@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { lookupVehiculo, validateVehiculoInput, MARCAS_CANONICAS, MARCA_DEFAULTS, MODELO_EXACT, normalizeMarca } from "@/lib/vehiculos";
+import { lookupVehiculo, validateVehiculoInput, MARCAS_CANONICAS, MARCA_DEFAULTS, getModeloExactMap, getCatalogStats, listModelosForMarca, normalizeMarca } from "@/lib/vehiculos";
 import type { Segmento, Gama } from "@/lib/tad";
 
 export const dynamic = "force-dynamic";
@@ -33,14 +33,13 @@ export async function GET(req: NextRequest) {
 
   // Modo info / catálogo si no hay params
   if (!marcaRaw && !modeloRaw) {
-    // Listado opcional si ?list=true
+    const stats = getCatalogStats();
+    const modeloMap = getModeloExactMap();
     const catalogo = Object.entries(MARCA_DEFAULTS).map(([k, v]) => ({
       marca: v.canon,
       segmentoDefault: v.segmento,
       gamaDefault: v.gama,
-      modelosExactos: Object.entries(MODELO_EXACT)
-        .filter(([key]) => key.startsWith(`${k}::`))
-        .map(([key, val]) => ({ modelo: key.split("::")[1], ...val })).length,
+      modelosExactos: Object.entries(modeloMap).filter(([key]) => key.startsWith(`${k}::`)).length,
     }));
     return json(
       {
@@ -64,6 +63,8 @@ export async function GET(req: NextRequest) {
         gamas: ["Entrada", "Media", "Alta", "Premium"] as Gama[],
         marcasDisponibles: MARCAS_CANONICAS,
         catalogo,
+        source: "catalogos/vehiculos-clasificacion.json",
+        stats,
         ejemplo: {
           request: "/api/vehiculos?marca=Mazda&modelo=3",
           response: {
@@ -83,9 +84,8 @@ export async function GET(req: NextRequest) {
 
   // Si solo viene marca y pide lista de modelos
   if (marcaRaw && !modeloRaw) {
-    const mNorm = normalizeMarca(marcaRaw);
-    const entry = MARCA_DEFAULTS[mNorm];
-    if (!entry) {
+    const data = listModelosForMarca(marcaRaw);
+    if (!data) {
       return json(
         {
           ok: false,
@@ -97,21 +97,18 @@ export async function GET(req: NextRequest) {
         "no-store"
       );
     }
-    // Devolver default + modelos disponibles
-    const modelos = Object.entries(MODELO_EXACT)
-      .filter(([k]) => k.startsWith(`${mNorm}::`))
-      .map(([k, v]) => ({ modelo: k.split("::")[1], segmento: v.segmento, gama: v.gama }))
-      .sort((a, b) => a.modelo.localeCompare(b.modelo));
+    const modelos = data.modelos.sort((a, b) => a.modelo.localeCompare(b.modelo));
 
     // Si explicitamente ?list=true o simplemente solo marca, devolvemos lista
     return json(
       {
         ok: true,
-        marca: entry.canon,
-        segmentoDefault: entry.segmento,
-        gamaDefault: entry.gama,
+        marca: data.marca,
+        segmentoDefault: MARCA_DEFAULTS[normalizeMarca(marcaRaw!)].segmento,
+        gamaDefault: MARCA_DEFAULTS[normalizeMarca(marcaRaw!)].gama,
         modelos,
         total: modelos.length,
+        source: "catalogos/vehiculos-clasificacion.json",
         hint: "Añade ?modelo={modelo} para lookup exacto. Ej: ?marca=Mazda&modelo=CX-5",
       },
       200
@@ -138,10 +135,14 @@ export async function GET(req: NextRequest) {
       gama: result.gama,
       confidence: result.confidence,
       mActivoBase: result.mActivoBase,
+      categoria: (result.extra as any)?.categoria ?? null,
+      tipo: (result.extra as any)?.tipo ?? null,
       meta: {
         marcaInput: result.marcaInput,
         modeloInput: result.modeloInput,
         source: result.source,
+        modeloCatalogo: (result.extra as any)?.modeloCatalogo ?? null,
+        origen: (result.extra as any)?.origen ?? null,
       },
     },
     200

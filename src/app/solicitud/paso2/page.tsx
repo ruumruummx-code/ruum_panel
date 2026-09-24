@@ -30,10 +30,6 @@ const STORAGE_PASO2 = "ruum_solicitud_paso2";
 const STORAGE_COTIZACION = "ruum_cotizacion_result";
 const STORAGE_PASO2_PENDING = "ruum_solicitud_paso2_has_pending";
 
-const MARCAS = [
-  "Acura","Audi","BMW","BYD","Chevrolet","Chrysler","Dodge","Fiat","Ford","GMC","Honda","Hyundai","Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Mazda","Mercedes-Benz","MG","Mini","Mitsubishi","Nissan","Peugeot","Porsche","RAM","Renault","Seat","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo",
-];
-
 const TRANSMISIONES = ["Automática", "Manual", "Eléctrica"] as const;
 const CONDICIONES = ["Nueva", "Seminueva", "Usada"] as const;
 const ESTADOS_GENERAL = ["Excelente", "Bueno", "Regular", "Daños visibles"] as const;
@@ -72,6 +68,9 @@ export default function SolicitudPaso2Page() {
   const [clasificacion, setClasificacion] = useState<Clasificacion>(null);
   const [clasificacionLoading, setClasificacionLoading] = useState(false);
   const [clasificacionError, setClasificacionError] = useState<string | null>(null);
+  const [marcasCatalogo, setMarcasCatalogo] = useState<string[]>([
+    "Acura","Audi","BMW","BYD","Chevrolet","Chrysler","Dodge","Fiat","Ford","GMC","Honda","Hyundai","Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Mazda","Mercedes-Benz","MG","Mini","Mitsubishi","Nissan","Peugeot","Porsche","RAM","Renault","Seat","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo",
+  ]);
   const [modelosCatalogo, setModelosCatalogo] = useState<string[]>([]);
   const [modelosLoading, setModelosLoading] = useState(false);
   const [accordionOpen, setAccordionOpen] = useState(false);
@@ -132,6 +131,14 @@ export default function SolicitudPaso2Page() {
       // También intentar leer historial si existe
     } catch {}
     hasLoadedRef.current = true;
+  }, []);
+
+  // Cargar marcas desde catálogo local
+  useEffect(() => {
+    fetch("/api/vehiculos")
+      .then((r) => r.json())
+      .then((j) => { if (j.marcasDisponibles) setMarcasCatalogo(j.marcasDisponibles); })
+      .catch(() => {});
   }, []);
 
   // Fetch modelos cuando cambia marca (catálogo ligado)
@@ -400,7 +407,7 @@ export default function SolicitudPaso2Page() {
                   className={`mt-1.5 h-10 w-full rounded-xl border bg-white px-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ff4d11]/20 focus:border-[#ff4d11] ${!isMarcaValid && touched.marca ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
                 />
                 <datalist id="marcas-list">
-                  {MARCAS.map((m) => <option key={m} value={m} />)}
+                  {marcasCatalogo.map((m) => <option key={m} value={m} />)}
                 </datalist>
                 <p className="text-[11px] text-slate-400 mt-1.5 min-h-[16px]">
                   {!isMarcaValid && touched.marca ? <span className="text-red-600 font-medium">Ingresa al menos 2 caracteres.</span> : "Selecciona una marca del catálogo o escribe libremente."}

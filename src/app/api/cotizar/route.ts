@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { calcularTAD, DEFAULT_VARIABLES, type Segmento, type Gama, type Condicion, type DiaTipo, type Horario } from "@/lib/tad";
 import { fetchTadConfig } from "@/lib/supabase/tad";
 import { lookupVehiculo } from "@/lib/vehiculos";
+import { getDistanceByCp, isMapboxConfigured } from "@/lib/mapbox";
 
 // Validaciones CP
 const CP_REGEX = /^\d{5}$/;
@@ -29,16 +30,25 @@ function condicionMap(v: string): Condicion {
   return "SEMINUEVO";
 }
 
-function dateToDiaHorario(fecha?: string): { diaTipo: DiaTipo; horario: Horario } {
+function dateToDiaHorario(fecha?: string, hora?: string): { diaTipo: DiaTipo; horario: Horario } {
   if (!fecha) return { diaTipo: "Lunes a Viernes", horario: "Diurno (06:00-20:00)" };
-  const d = new Date(fecha);
+  // Combinar fecha + hora si se proporciona (hora en formato HH:MM)
+  let d: Date;
+  if (hora && /^([01]\d|2[0-3]):([0-5]\d)$/.test(hora)) {
+    d = new Date(`${fecha}T${hora}:00`);
+  } else {
+    d = new Date(fecha);
+  }
   if (isNaN(d.getTime())) return { diaTipo: "Lunes a Viernes", horario: "Diurno (06:00-20:00)" };
   const day = d.getDay(); // 0 dom, 6 sab
   let diaTipo: DiaTipo = "Lunes a Viernes";
   if (day === 6) diaTipo = "Sábado";
   if (day === 0) diaTipo = "Domingo y Feriados";
   const hour = d.getHours();
-  const horario: Horario = hour >= 6 && hour <= 20 ? "Diurno (06:00-20:00)" : "Nocturno (20:01-05:59)";
+  const minute = d.getMinutes();
+  const totalMinutes = hour * 60 + minute;
+  // Diurno 06:00-20:00 inclusive (360-1200 min)
+  const horario: Horario = totalMinutes >= 360 && totalMinutes <= 1200 ? "Diurno (06:00-20:00)" : "Nocturno (20:01-05:59)";
   return { diaTipo, horario };
 }
 
@@ -54,6 +64,7 @@ export async function POST(req: NextRequest) {
       condicion,
       cuando, // "inmediato" | "programado"
       fechaProgramada,
+      horaProgramada,
       // opcionales avanzados
       clienteTipo,
       segmento,
@@ -84,6 +95,12 @@ export async function POST(req: NextRequest) {
     if (cuandoNorm === "programado" && !fechaProgramada) {
       errors.fechaProgramada = "Selecciona la fecha programada.";
     }
+    if (cuandoNorm === "programado" && !horaProgramada) {
+      errors.horaProgramada = "Selecciona la hora del traslado.";
+    }
+    if (horaProgramada && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(String(horaProgramada).trim())) {
+      errors.horaProgramada = "Hora no válida (formato HH:MM 00:00-23:59).";
+    }
     if (fechaProgramada) {
       const d = new Date(fechaProgramada);
       if (isNaN(d.getTime())) errors.fechaProgramada = "Fecha no válida.";
@@ -91,6 +108,16 @@ export async function POST(req: NextRequest) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (d < today) errors.fechaProgramada = "La fecha no puede ser en el pasado.";
+        // Si es hoy, validar que hora no sea en el pasado
+        if (horaProgramada && /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(horaProgramada))) {
+          const now = new Date();
+          const combined = new Date(`${fechaProgramada}T${horaProgramada}:00`);
+          if (!isNaN(combined.getTime()) && combined < now) {
+            // Permitir con warning suave: si es hoy y hora ya pasó, marcar error
+            const isToday = d.toDateString() === today.toDateString();
+            if (isToday) errors.horaProgramada = "La hora no puede ser en el pasado.";
+          }
+        }
       }
     }
 
@@ -101,8 +128,26 @@ export async function POST(req: NextRequest) {
     const cpO = String(cpOrigen).trim();
     const cpD = String(cpDestino).trim();
 
-    // Distancia estimada
-    const { km: distanciaKm, horas } = estimateDistance(cpO, cpD);
+    // Distancia — intenta Mapbox backend (via getDistanceByCp), fallback heurística
+    let distanciaKm: number;
+    let horas: number;
+    let distanceSource = "estimado";
+    try {
+      if (isMapboxConfigured()) {
+        const r = await getDistanceByCp(cpO, cpD);
+        distanciaKm = r.distanceKm;
+        horas = r.horas;
+        distanceSource = r.source;
+      } else {
+        const est = estimateDistance(cpO, cpD);
+        distanciaKm = est.km;
+        horas = est.horas;
+      }
+    } catch {
+      const est = estimateDistance(cpO, cpD);
+      distanciaKm = est.km;
+      horas = est.horas;
+    }
 
     // Resolver segmento/gama — usa catálogo centralizado vehiculos (marca+modelo)
     let seg: Segmento = segmento as Segmento;
@@ -120,7 +165,7 @@ export async function POST(req: NextRequest) {
 
     const condicionTad = condicionMap(String(condicion));
     const urgencia = cuandoNorm === "inmediato" ? "Express (<4h)" : "Programado (>24h)";
-    const { diaTipo, horario } = dateToDiaHorario(fechaProgramada);
+    const { diaTipo, horario } = dateToDiaHorario(fechaProgramada, horaProgramada);
 
     // Intentar cargar variables base desde Supabase (si falla usa defaults)
     let variables = DEFAULT_VARIABLES;
@@ -160,6 +205,8 @@ export async function POST(req: NextRequest) {
       meta: {
         distanciaKm,
         horas,
+        distanceSource,
+        mapbox: isMapboxConfigured() ? "enabled" : "disabled",
         segmento: seg,
         gama: gam,
         condicion: condicionTad,
@@ -170,6 +217,8 @@ export async function POST(req: NextRequest) {
         cpDestino: cpD,
         marca: String(marca).trim(),
         modelo: String(modelo).trim(),
+        fechaProgramada: fechaProgramada ? String(fechaProgramada) : null,
+        horaProgramada: horaProgramada ? String(horaProgramada) : null,
       },
     });
   } catch (e: any) {
@@ -180,14 +229,16 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    info: "POST /api/cotizar con { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada }",
+    info: "POST /api/cotizar con { cpOrigen, cpDestino, marca, modelo, condicion, cuando, fechaProgramada, horaProgramada }",
     validacion: {
       cpOrigen: "Exactamente 5 dígitos numéricos",
       cpDestino: "Exactamente 5 dígitos numéricos",
       marca: "Obligatorio",
       modelo: "Obligatorio texto libre",
       condicion: "Nueva | Seminueva | Rescate mecánico",
-      cuando: "inmediato (Lo antes posible) | programado (Programar fecha)",
+      cuando: "inmediato (Lo antes posible) | programado (Programar fecha + hora)",
+      fechaProgramada: "YYYY-MM-DD, requerida si cuando=programado",
+      horaProgramada: "HH:MM 00:00-23:59, requerida si cuando=programado, define tarifa Diurno/Nocturno",
     },
     ejemplo: {
       cpOrigen: "37000",
@@ -195,7 +246,9 @@ export async function GET() {
       marca: "Mazda",
       modelo: "3",
       condicion: "Seminueva",
-      cuando: "inmediato",
+      cuando: "programado",
+      fechaProgramada: "2026-09-30",
+      horaProgramada: "14:30",
     },
   });
 }
